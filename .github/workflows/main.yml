@@ -1,0 +1,64 @@
+
+name: Windows Cloud PC - AnyDesk (Optimized)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Start Building...
+    runs-on: windows-latest
+    timeout-minutes: 360
+
+    steps:
+      - name: Downloading & Installing Essentials
+        shell: pwsh
+        run: |
+          $url = "https://www.dropbox.com/scl/fi/7eiczvgil84czu55dxep3/Downloads.bat?rlkey=wzdc1wxjsph2b7r0atplmdz3p&dl=1"
+
+          Invoke-WebRequest -Uri $url -OutFile "Downloads.bat"
+
+          if (!(Test-Path "Downloads.bat")) {
+            Write-Error "Downloads.bat não foi encontrado."
+            exit 1
+          }
+
+          cmd /c Downloads.bat
+
+      - name: Verify AnyDesk Startup File
+        shell: pwsh
+        run: |
+          if (!(Test-Path "start.bat")) {
+            Write-Error "Arquivo start.bat não encontrado."
+            exit 1
+          }
+
+          Write-Host "Arquivo start.bat encontrado."
+
+      - name: Start AnyDesk
+        shell: pwsh
+        run: |
+          Start-Process -FilePath "cmd.exe" -ArgumentList "/c start.bat" -Wait
+
+      - name: Verify AnyDesk Process
+        shell: pwsh
+        run: |
+          $process = Get-Process -Name "AnyDesk" -ErrorAction SilentlyContinue
+
+          if ($process) {
+            Write-Host "AnyDesk está em execução."
+          } else {
+            Write-Error "AnyDesk não iniciou corretamente."
+            exit 1
+          }
+
+      - name: Clean Up Temporary Files
+        if: always()
+        shell: pwsh
+        run: |
+          if (Test-Path "Downloads.bat") {
+            Remove-Item "Downloads.bat" -Force
+          }
+
+          Write-Host "Limpeza concluída."
+          
